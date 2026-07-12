@@ -15,20 +15,22 @@ NETWORK="testnet"
 IDENTITY="deployer"
 
 echo "==> Building contracts"
-stellar contract build
+cargo build --target wasm32-unknown-unknown --release
+stellar contract optimize --wasm target/wasm32-unknown-unknown/release/reputation_registry.wasm
+stellar contract optimize --wasm target/wasm32-unknown-unknown/release/skill_trade.wasm
 
 echo "==> Deploying ReputationRegistry contract"
 REPUTATION_ID=$(stellar contract deploy \
-  --wasm target/wasm32-unknown-unknown/release/reputation_registry.wasm \
+  --wasm target/wasm32-unknown-unknown/release/reputation_registry.optimized.wasm \
   --source "$IDENTITY" \
-  --network "$NETWORK")
+  --network "$NETWORK" 2>deploy_rep_err.log) || { cat deploy_rep_err.log; exit 1; }
 echo "ReputationRegistry deployed at: $REPUTATION_ID"
 
 echo "==> Deploying SkillTrade contract"
 TRADE_ID=$(stellar contract deploy \
-  --wasm target/wasm32-unknown-unknown/release/skill_trade.wasm \
+  --wasm target/wasm32-unknown-unknown/release/skill_trade.optimized.wasm \
   --source "$IDENTITY" \
-  --network "$NETWORK")
+  --network "$NETWORK" 2>deploy_trade_err.log) || { cat deploy_trade_err.log; exit 1; }
 echo "SkillTrade deployed at: $TRADE_ID"
 
 echo "==> Initializing ReputationRegistry (authorizing the Trade contract to call it)"
@@ -45,9 +47,12 @@ echo " Deployment complete"
 echo "=================================================="
 echo " ReputationRegistry contract ID: $REPUTATION_ID"
 echo " SkillTrade contract ID:         $TRADE_ID"
+
+echo "Fetching Test Token (Native XLM asset) ID..."
+TOKEN_ID=$(stellar contract id asset --asset native --network testnet)
+echo " Native Token ID is:             $TOKEN_ID"
 echo ""
 echo " Next steps:"
-echo " 1. Add these IDs to frontend/.env as VITE_REPUTATION_CONTRACT_ID and VITE_TRADE_CONTRACT_ID"
-echo " 2. Deploy or reuse a testnet SEP-41 token for bonds, set VITE_BOND_TOKEN_ID"
-echo " 3. Run scripts/sample_interaction.sh to propose a trade for your submission's tx hash"
+echo " 1. Add these IDs to frontend/.env as VITE_REPUTATION_CONTRACT_ID, VITE_TRADE_CONTRACT_ID, and VITE_BOND_TOKEN_ID"
+echo " 2. Run scripts/sample_interaction.sh to test a trade"
 echo "=================================================="
