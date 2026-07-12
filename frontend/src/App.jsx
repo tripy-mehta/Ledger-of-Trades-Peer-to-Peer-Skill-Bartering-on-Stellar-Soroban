@@ -63,6 +63,7 @@ export default function App() {
         wallet.signTransaction
       );
       setSuccess(`Trade proposed and bond posted. Transaction: ${hash}`);
+      if (wallet.refreshBalance) wallet.refreshBalance();
       setView('trade');
     } catch (err) {
       setError(`Failed to propose trade: ${err.message}`);
@@ -89,6 +90,7 @@ export default function App() {
         result = await tradeClient.claimDefault(currentTradeId, wallet.address, wallet.signTransaction);
       }
       setSuccess(`Action confirmed on-chain. Transaction: ${result.hash}`);
+      if (wallet.refreshBalance) wallet.refreshBalance();
       await handleLookupTrade(currentTradeId);
     } catch (err) {
       setError(`Action failed: ${err.message}`);
