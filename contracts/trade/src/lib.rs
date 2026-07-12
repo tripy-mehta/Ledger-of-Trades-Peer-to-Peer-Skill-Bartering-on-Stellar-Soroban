@@ -15,7 +15,7 @@
 
 #![no_std]
 
-use soroban_sdk::{contract, contracterror, contractevent, contractimpl, contracttype, token, Address, Env, String};
+use soroban_sdk::{contract, contracterror, contractimpl, contracttype, symbol_short, token, Address, Env, String};
 
 mod reputation {
     soroban_sdk::contractimport!(
@@ -66,39 +66,7 @@ pub enum TradeError {
     AlreadyDelivered = 6,
 }
 
-#[contractevent]
-#[derive(Clone, Debug)]
-pub struct TradeProposed {
-    #[topic]
-    pub trade_id: u64,
-    pub party_a: Address,
-    pub party_b: Address,
-    pub bond_amount: i128,
-}
 
-#[contractevent]
-#[derive(Clone, Debug)]
-pub struct DeliveryMarked {
-    #[topic]
-    pub trade_id: u64,
-    pub party: Address,
-}
-
-#[contractevent]
-#[derive(Clone, Debug)]
-pub struct TradeCompleted {
-    #[topic]
-    pub trade_id: u64,
-}
-
-#[contractevent]
-#[derive(Clone, Debug)]
-pub struct TradeDefaulted {
-    #[topic]
-    pub trade_id: u64,
-    pub defaulting_party: Address,
-    pub claimed_by: Address,
-}
 
 #[contract]
 pub struct SkillTradeContract;
@@ -142,7 +110,9 @@ impl SkillTradeContract {
         };
         env.storage().persistent().set(&DataKey::Trade(trade_id), &trade);
 
-        TradeProposed { trade_id, party_a, party_b, bond_amount }.publish(&env);
+        let topics = (symbol_short!("Proposed"), trade_id);
+        let data = (party_a, party_b, bond_amount);
+        env.events().publish(topics, data);
         Ok(trade_id)
     }
 
@@ -185,7 +155,9 @@ impl SkillTradeContract {
             return Err(TradeError::Unauthorized);
         }
 
-        DeliveryMarked { trade_id, party }.publish(&env);
+        let topics = (symbol_short!("Delivered"), trade_id);
+        let data = (party,);
+        env.events().publish(topics, data);
 
         if trade.delivered_a && trade.delivered_b {
             trade.status = TradeStatus::BothDelivered;
@@ -223,7 +195,9 @@ impl SkillTradeContract {
         updated.status = TradeStatus::Completed;
         env.storage().persistent().set(&DataKey::Trade(trade_id), &updated);
 
-        TradeCompleted { trade_id }.publish(env);
+        let topics = (symbol_short!("Completed"), trade_id);
+        let data = ();
+        env.events().publish(topics, data);
         Ok(())
     }
 
@@ -274,7 +248,9 @@ impl SkillTradeContract {
         trade.status = TradeStatus::Defaulted;
         env.storage().persistent().set(&DataKey::Trade(trade_id), &trade);
 
-        TradeDefaulted { trade_id, defaulting_party, claimed_by: honest_party }.publish(&env);
+        let topics = (symbol_short!("Defaulted"), trade_id);
+        let data = (defaulting_party, honest_party);
+        env.events().publish(topics, data);
         Ok(())
     }
 

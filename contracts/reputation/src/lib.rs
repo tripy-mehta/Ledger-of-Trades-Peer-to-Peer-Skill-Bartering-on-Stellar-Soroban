@@ -12,7 +12,7 @@
 
 #![no_std]
 
-use soroban_sdk::{contract, contracterror, contractevent, contractimpl, contracttype, Address, Env, Vec};
+use soroban_sdk::{contract, contracterror, contractimpl, contracttype, symbol_short, Address, Env, Vec};
 
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -54,15 +54,6 @@ pub enum ReputationError {
     Unauthorized = 3,
 }
 
-#[contractevent]
-#[derive(Clone, Debug)]
-pub struct ReputationUpdated {
-    #[topic]
-    pub user: Address,
-    pub trade_id: u64,
-    pub outcome: TradeOutcome,
-    pub new_score: u32,
-}
 
 const COMPLETE_DELTA: u32 = 2;
 const DEFAULT_PENALTY: u32 = 3;
@@ -129,7 +120,9 @@ impl ReputationRegistryContract {
         });
         env.storage().persistent().set(&history_key, &history);
 
-        ReputationUpdated { user, trade_id, outcome, new_score: profile.score }.publish(&env);
+        let topics = (symbol_short!("RepUpd"), user.clone());
+        let data = (trade_id, outcome.clone(), profile.score);
+        env.events().publish(topics, data);
         Ok(profile.score)
     }
 
