@@ -19,7 +19,7 @@ use soroban_sdk::{contract, contracterror, contractimpl, contracttype, symbol_sh
 
 mod reputation {
     soroban_sdk::contractimport!(
-        file = "../reputation/target/wasm32-unknown-unknown/release/reputation_registry.wasm"
+        file = "../../target/wasm32-unknown-unknown/release/reputation_registry.wasm"
     );
 }
 

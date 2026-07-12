@@ -21,7 +21,7 @@ export default function ProposeTradeForm({ onPropose, loading }) {
       <h3 className="font-display text-xl font-semibold text-ink">Propose a trade</h3>
 
       <div>
-        <label className="block text-xs text-ink/50 mb-1.5">Trading partner's address</label>
+        <label className="block text-xs text-ink/50 mb-1.5">Trading partner&apos;s address</label>
         <input
           value={partyB}
           onChange={(e) => setPartyB(e.target.value)}
@@ -32,7 +32,7 @@ export default function ProposeTradeForm({ onPropose, loading }) {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
-          <label className="block text-xs text-ink/50 mb-1.5">What you'll deliver</label>
+          <label className="block text-xs text-ink/50 mb-1.5">What you&apos;ll deliver</label>
           <input
             value={offerA}
             onChange={(e) => setOfferA(e.target.value)}
@@ -41,7 +41,7 @@ export default function ProposeTradeForm({ onPropose, loading }) {
           />
         </div>
         <div>
-          <label className="block text-xs text-ink/50 mb-1.5">What they'll deliver</label>
+          <label className="block text-xs text-ink/50 mb-1.5">What they&apos;ll deliver</label>
           <input
             value={offerB}
             onChange={(e) => setOfferB(e.target.value)}

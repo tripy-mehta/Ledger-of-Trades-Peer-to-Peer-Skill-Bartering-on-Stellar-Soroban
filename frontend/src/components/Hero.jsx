@@ -11,7 +11,7 @@ export default function Hero() {
         </h1>
         <p className="text-ink/70 mt-4 text-base sm:text-lg leading-relaxed font-body">
           No money changes hands. Both sides post a good-faith bond, deliver, and get their bond back —
-          or forfeit it if they don't. Every trade closes onto both people's on-chain reputation.
+          or forfeit it if they don&apos;t. Every trade closes onto both people&apos;s on-chain reputation.
         </p>
       </div>
     </section>
