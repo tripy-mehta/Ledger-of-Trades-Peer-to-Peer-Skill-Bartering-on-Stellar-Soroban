@@ -14,6 +14,21 @@ set -euo pipefail
 NETWORK="testnet"
 IDENTITY="deployer"
 
+if [ -f "contract_ids.env" ]; then
+  echo "==> Found cached contract_ids.env, skipping deployment..."
+  source contract_ids.env
+  echo " ReputationRegistry contract ID: $REPUTATION_ID"
+  echo " SkillTrade contract ID:         $TRADE_ID"
+  echo " Native Token ID is:             $TOKEN_ID"
+  exit 0
+fi
+
+if ! stellar keys ls | grep -q "$IDENTITY"; then
+  echo "==> Generating and funding identity: $IDENTITY"
+  stellar keys generate "$IDENTITY" --network "$NETWORK"
+  stellar keys fund "$IDENTITY" --network "$NETWORK"
+fi
+
 echo "==> Building contracts"
 cargo build --target wasm32-unknown-unknown --release
 stellar contract optimize --wasm target/wasm32-unknown-unknown/release/reputation_registry.wasm
@@ -51,6 +66,11 @@ echo " SkillTrade contract ID:         $TRADE_ID"
 echo "Fetching Test Token (Native XLM asset) ID..."
 TOKEN_ID=$(stellar contract id asset --asset native --network testnet)
 echo " Native Token ID is:             $TOKEN_ID"
+
+echo "REPUTATION_ID=$REPUTATION_ID" > contract_ids.env
+echo "TRADE_ID=$TRADE_ID" >> contract_ids.env
+echo "TOKEN_ID=$TOKEN_ID" >> contract_ids.env
+
 echo ""
 echo " Next steps:"
 echo " 1. Add these IDs to frontend/.env as VITE_REPUTATION_CONTRACT_ID, VITE_TRADE_CONTRACT_ID, and VITE_BOND_TOKEN_ID"

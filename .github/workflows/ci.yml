@@ -94,12 +94,16 @@ jobs:
       - name: Install Stellar CLI
         run: cargo binstall --no-confirm stellar-cli
 
+      - name: Cache Contract Deployment
+        uses: actions/cache@v4
+        with:
+          path: |
+            .soroban
+            contract_ids.env
+          key: ${{ runner.os }}-soroban-deploy-${{ hashFiles('contracts/**/*.rs', 'contracts/**/Cargo.toml', 'scripts/deploy.sh') }}
+
       - name: Deploy to Testnet
         run: |
-          echo "Generating identities..."
-          stellar keys generate deployer --network testnet
-          stellar keys fund deployer --network testnet
-          
           # Run the updated deploy script
           ./scripts/deploy.sh
           
