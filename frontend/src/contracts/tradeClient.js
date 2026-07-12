@@ -37,18 +37,21 @@ export class TradeClient {
     return null;
   }
 
-  async invoke(method, args, sourceAddress, signTransaction) {
+  async invoke(method, args, sourceAddress, signTransaction, onStage) {
     const { tx, simulated } = await this._buildAndSimulate(method, args, sourceAddress);
     const prepared = rpc.assembleTransaction(tx, simulated).build();
 
+    onStage?.('signing');
     const signedXdr = await signTransaction(prepared.toXDR());
     const signedTx = TransactionBuilder.fromXDR(signedXdr, NETWORK.networkPassphrase);
 
+    onStage?.('submitting');
     const sendResponse = await server.sendTransaction(signedTx);
     if (sendResponse.status === 'ERROR') {
       throw new Error(`Transaction submission failed: ${JSON.stringify(sendResponse.errorResult)}`);
     }
 
+    onStage?.('confirming');
     return this._pollTransaction(sendResponse.hash);
   }
 
@@ -74,7 +77,7 @@ export class TradeClient {
     throw new Error(`Transaction ${hash} did not confirm in time`);
   }
 
-  proposeTrade(partyA, partyB, offerA, offerB, bondToken, bondAmount, reputationContract, deadline, signTransaction) {
+  proposeTrade(partyA, partyB, offerA, offerB, bondToken, bondAmount, reputationContract, deadline, signTransaction, onStage) {
     const args = [
       nativeToScVal(partyA, { type: 'address' }),
       nativeToScVal(partyB, { type: 'address' }),
@@ -85,22 +88,22 @@ export class TradeClient {
       nativeToScVal(reputationContract, { type: 'address' }),
       nativeToScVal(BigInt(deadline), { type: 'u64' }),
     ];
-    return this.invoke('propose_trade', args, partyA, signTransaction);
+    return this.invoke('propose_trade', args, partyA, signTransaction, onStage);
   }
 
-  acceptTrade(tradeId, partyB, signTransaction) {
+  acceptTrade(tradeId, partyB, signTransaction, onStage) {
     const args = [nativeToScVal(BigInt(tradeId), { type: 'u64' })];
-    return this.invoke('accept_trade', args, partyB, signTransaction);
+    return this.invoke('accept_trade', args, partyB, signTransaction, onStage);
   }
 
-  markDelivered(tradeId, party, signTransaction) {
+  markDelivered(tradeId, party, signTransaction, onStage) {
     const args = [nativeToScVal(BigInt(tradeId), { type: 'u64' }), nativeToScVal(party, { type: 'address' })];
-    return this.invoke('mark_delivered', args, party, signTransaction);
+    return this.invoke('mark_delivered', args, party, signTransaction, onStage);
   }
 
-  claimDefault(tradeId, claimant, signTransaction) {
+  claimDefault(tradeId, claimant, signTransaction, onStage) {
     const args = [nativeToScVal(BigInt(tradeId), { type: 'u64' }), nativeToScVal(claimant, { type: 'address' })];
-    return this.invoke('claim_default', args, claimant, signTransaction);
+    return this.invoke('claim_default', args, claimant, signTransaction, onStage);
   }
 
   getTrade(tradeId, sourceAddress) {

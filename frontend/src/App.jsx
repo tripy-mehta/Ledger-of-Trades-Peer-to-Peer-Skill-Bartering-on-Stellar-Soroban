@@ -8,6 +8,7 @@ import ReputationCard from './components/ReputationCard';
 import EventFeed from './components/EventFeed';
 import Banner from './components/Banner';
 import Skeleton from './components/Skeleton';
+import TransactionOverlay from './components/TransactionOverlay';
 import { useWallet } from './hooks/useWallet';
 import { useContractEvents } from './hooks/useContractEvents';
 import { tradeClient, reputationClient } from './contracts/tradeClient';
@@ -28,6 +29,9 @@ export default function App() {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
+  // Transaction overlay state
+  const [txStage, setTxStage] = useState(null); // null | 'signing' | 'submitting' | 'confirming'
+
   async function handleLookupTrade(tradeId) {
     setError(null);
     setLoadingTrade(true);
@@ -36,7 +40,7 @@ export default function App() {
       setTrade({ ...result, id: tradeId });
       setCurrentTradeId(tradeId);
     } catch (err) {
-      setError(`Could not load trade #${tradeId}. It may not exist, or contract IDs in config.js need updating. (${err.message})`);
+      setError(`Could not load trade #${tradeId}. It may not exist yet. (${err.message})`);
       setTrade(null);
     } finally {
       setLoadingTrade(false);
@@ -50,6 +54,7 @@ export default function App() {
     }
     setError(null);
     setProposing(true);
+    setTxStage('signing');
     try {
       const { hash, returnValue } = await tradeClient.proposeTrade(
         wallet.address,
@@ -60,9 +65,10 @@ export default function App() {
         bondAmount,
         CONTRACTS.REPUTATION_CONTRACT_ID,
         deadline,
-        wallet.signTransaction
+        wallet.signTransaction,
+        setTxStage,
       );
-      
+
       const tradeId = returnValue !== null && returnValue !== undefined ? returnValue.toString() : null;
 
       setSuccess(
@@ -73,21 +79,23 @@ export default function App() {
               href={`https://stellar.expert/explorer/testnet/tx/${hash}`}
               target="_blank"
               rel="noreferrer"
-              className="underline text-accent hover:text-accent-soft"
+              className="underline text-accent hover:opacity-80"
             >
-              View on Stellar Expert
+              View on Stellar Expert ↗
             </a>
           </span>
           {tradeId && (
             <span className="font-medium mt-1">
-              → Share Trade ID <span className="font-mono bg-page px-1.5 py-0.5 border border-rule rounded">{tradeId}</span> with your partner so they can accept it!
+              → Share Trade ID{' '}
+              <span className="font-mono bg-page px-1.5 py-0.5 border border-rule rounded">{tradeId}</span>{' '}
+              with your partner so they can accept it in the &ldquo;My trade&rdquo; tab!
             </span>
           )}
         </div>
       );
-      
+
       if (wallet.refreshBalance) wallet.refreshBalance();
-      
+
       if (tradeId) {
         await handleLookupTrade(tradeId);
       }
@@ -95,6 +103,7 @@ export default function App() {
     } catch (err) {
       setError(`Failed to propose trade: ${err.message}`);
     } finally {
+      setTxStage(null);
       setProposing(false);
     }
   }
@@ -107,16 +116,17 @@ export default function App() {
     if (currentTradeId === null) return;
     setError(null);
     setActionLoading(true);
+    setTxStage('signing');
     try {
       let result;
       if (action === 'accept') {
-        result = await tradeClient.acceptTrade(currentTradeId, wallet.address, wallet.signTransaction);
+        result = await tradeClient.acceptTrade(currentTradeId, wallet.address, wallet.signTransaction, setTxStage);
       } else if (action === 'markDelivered') {
-        result = await tradeClient.markDelivered(currentTradeId, wallet.address, wallet.signTransaction);
+        result = await tradeClient.markDelivered(currentTradeId, wallet.address, wallet.signTransaction, setTxStage);
       } else if (action === 'claimDefault') {
-        result = await tradeClient.claimDefault(currentTradeId, wallet.address, wallet.signTransaction);
+        result = await tradeClient.claimDefault(currentTradeId, wallet.address, wallet.signTransaction, setTxStage);
       }
-      
+
       setSuccess(
         <span>
           Action confirmed on-chain!{' '}
@@ -124,9 +134,9 @@ export default function App() {
             href={`https://stellar.expert/explorer/testnet/tx/${result.hash}`}
             target="_blank"
             rel="noreferrer"
-            className="underline text-accent hover:text-accent-soft"
+            className="underline text-accent hover:opacity-80"
           >
-            View on Stellar Expert
+            View on Stellar Expert ↗
           </a>
         </span>
       );
@@ -135,6 +145,7 @@ export default function App() {
     } catch (err) {
       setError(`Action failed: ${err.message}`);
     } finally {
+      setTxStage(null);
       setActionLoading(false);
     }
   }
@@ -143,7 +154,9 @@ export default function App() {
     setError(null);
     setLoadingProfile(true);
     try {
-      const result = await reputationClient.getProfile(address, wallet.address || address);
+      // If no wallet connected, use the queried address as the source for simulation
+      const sourceAddr = wallet.address || address;
+      const result = await reputationClient.getProfile(address, sourceAddr);
       setProfile(result);
     } catch (err) {
       setError(`Could not load reputation for that address. (${err.message})`);
@@ -155,11 +168,16 @@ export default function App() {
 
   return (
     <div className="min-h-screen">
+      {/* Transaction overlay — shown during signing/submitting/confirming */}
+      <TransactionOverlay visible={!!txStage} stage={txStage} />
+
       <NavBar wallet={wallet} view={view} onViewChange={setView} />
       {view === 'propose' && <Hero />}
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 pb-20 space-y-6">
-        {(error || wallet.error) && <Banner type="error" message={error || wallet.error} onDismiss={() => setError(null)} />}
+        {(error || wallet.error) && (
+          <Banner type="error" message={error || wallet.error} onDismiss={() => setError(null)} />
+        )}
         {success && <Banner type="success" message={success} onDismiss={() => setSuccess(null)} />}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -168,7 +186,7 @@ export default function App() {
 
             {view === 'trade' && (
               <>
-                <TradeLookup onLookup={handleLookupTrade} loading={loadingTrade} />
+                <TradeLookup onLookup={handleLookupTrade} loading={loadingTrade} currentTradeId={currentTradeId} />
                 {loadingTrade ? (
                   <Skeleton />
                 ) : (
@@ -183,7 +201,12 @@ export default function App() {
             )}
 
             {view === 'reputation' && (
-              <ReputationCard onLookup={handleLookupReputation} profile={profile} loading={loadingProfile} />
+              <ReputationCard
+                onLookup={handleLookupReputation}
+                profile={profile}
+                loading={loadingProfile}
+                walletAddress={wallet.address}
+              />
             )}
           </div>
 
