@@ -68,7 +68,6 @@ impl ReputationRegistryContract {
         if env.storage().instance().has(&DataKey::AuthorizedTrade) {
             return Err(ReputationError::AlreadyInitialized);
         }
-        trade_contract.require_auth();
         env.storage().instance().set(&DataKey::AuthorizedTrade, &trade_contract);
         Ok(())
     }
