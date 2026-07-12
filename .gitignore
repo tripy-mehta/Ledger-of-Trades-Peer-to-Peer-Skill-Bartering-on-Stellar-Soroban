@@ -1,6 +1,5 @@
 # Rust / Soroban
 /target
-Cargo.lock
 **/*.rs.bk
 
 # Node
