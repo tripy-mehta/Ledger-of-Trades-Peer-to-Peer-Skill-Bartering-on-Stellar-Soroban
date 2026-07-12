@@ -51,7 +51,7 @@ export default function App() {
     setError(null);
     setProposing(true);
     try {
-      const { hash } = await tradeClient.proposeTrade(
+      const { hash, returnValue } = await tradeClient.proposeTrade(
         wallet.address,
         partyB,
         offerA,
@@ -62,8 +62,35 @@ export default function App() {
         deadline,
         wallet.signTransaction
       );
-      setSuccess(`Trade proposed and bond posted. Transaction: ${hash}`);
+      
+      const tradeId = returnValue !== null && returnValue !== undefined ? returnValue.toString() : null;
+
+      setSuccess(
+        <div className="flex flex-col gap-1">
+          <span>
+            Trade proposed and bond posted!{' '}
+            <a
+              href={`https://stellar.expert/explorer/testnet/tx/${hash}`}
+              target="_blank"
+              rel="noreferrer"
+              className="underline text-accent hover:text-accent-soft"
+            >
+              View on Stellar Expert
+            </a>
+          </span>
+          {tradeId && (
+            <span className="font-medium mt-1">
+              → Share Trade ID <span className="font-mono bg-page px-1.5 py-0.5 border border-rule rounded">{tradeId}</span> with your partner so they can accept it!
+            </span>
+          )}
+        </div>
+      );
+      
       if (wallet.refreshBalance) wallet.refreshBalance();
+      
+      if (tradeId) {
+        await handleLookupTrade(tradeId);
+      }
       setView('trade');
     } catch (err) {
       setError(`Failed to propose trade: ${err.message}`);
@@ -89,7 +116,20 @@ export default function App() {
       } else if (action === 'claimDefault') {
         result = await tradeClient.claimDefault(currentTradeId, wallet.address, wallet.signTransaction);
       }
-      setSuccess(`Action confirmed on-chain. Transaction: ${result.hash}`);
+      
+      setSuccess(
+        <span>
+          Action confirmed on-chain!{' '}
+          <a
+            href={`https://stellar.expert/explorer/testnet/tx/${result.hash}`}
+            target="_blank"
+            rel="noreferrer"
+            className="underline text-accent hover:text-accent-soft"
+          >
+            View on Stellar Expert
+          </a>
+        </span>
+      );
       if (wallet.refreshBalance) wallet.refreshBalance();
       await handleLookupTrade(currentTradeId);
     } catch (err) {

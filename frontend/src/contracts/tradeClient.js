@@ -56,7 +56,15 @@ export class TradeClient {
     for (let i = 0; i < attempts; i++) {
       const result = await server.getTransaction(hash);
       if (result.status === 'SUCCESS') {
-        return { hash, status: 'SUCCESS', result };
+        let returnValue = null;
+        if (result.returnValue) {
+          try {
+            returnValue = scValToNative(result.returnValue);
+          } catch (e) {
+            console.error('Could not parse returnValue', e);
+          }
+        }
+        return { hash, status: 'SUCCESS', result, returnValue };
       }
       if (result.status === 'FAILED') {
         throw new Error(`Transaction failed: ${hash}`);
