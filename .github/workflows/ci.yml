@@ -104,6 +104,8 @@ jobs:
 
       - name: Deploy to Testnet
         run: |
+          # Ensure the script is executable
+          chmod +x ./scripts/deploy.sh
           # Run the updated deploy script
           ./scripts/deploy.sh
           
