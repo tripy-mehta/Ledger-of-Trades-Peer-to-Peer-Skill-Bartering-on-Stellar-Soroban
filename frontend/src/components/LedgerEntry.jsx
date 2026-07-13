@@ -73,8 +73,9 @@ export default function LedgerEntry({ trade, currentAddress, onAction, actionLoa
   const myDelivered = isPartyA ? trade.delivered_a : trade.delivered_b;
   const deadlinePassed = trade.deadline && Date.now() / 1000 > Number(trade.deadline);
 
-  const canAccept = isPartyB && statusKey !== 'Completed' && statusKey !== 'Defaulted' && statusKey !== 'BothDelivered';
-  const canMarkDelivered = isParticipant && isOpen && !myDelivered && !deadlinePassed;
+  // canAccept logic now safely relies on the contract's new accepted_b field
+  const canAccept = isPartyB && isOpen && !trade.accepted_b;
+  const canMarkDelivered = isParticipant && isOpen && trade.accepted_b && !myDelivered && !deadlinePassed;
   const canClaimDefault = isParticipant && deadlinePassed && !isClosed;
 
   let nextStep = null;
@@ -82,10 +83,10 @@ export default function LedgerEntry({ trade, currentAddress, onAction, actionLoa
     nextStep = '🔌 Connect your wallet to interact with this trade.';
   } else if (canAccept) {
     nextStep = '👇 You are Party B — click Accept below to post your bond and lock in the deal!';
-  } else if (isPartyA && isOpen) {
+  } else if (isPartyA && isOpen && !trade.accepted_b) {
     nextStep = '⏳ Waiting for your trading partner to accept and post their bond.';
   } else if (canMarkDelivered) {
-    nextStep = '👇 When you have completed your side, click "Mark my side delivered".';
+    nextStep = '👇 Trade locked! When you have completed your side, click "Mark my side delivered".';
   } else if (statusKey === 'Completed') {
     nextStep = '🎉 Both sides delivered — bonds returned and reputations updated!';
   } else if (statusKey === 'Defaulted') {

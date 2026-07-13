@@ -44,6 +44,7 @@ pub struct Trade {
     pub reputation_contract: Address,
     pub delivered_a: bool,
     pub delivered_b: bool,
+    pub accepted_b: bool,
     pub deadline: u64,
     pub status: TradeStatus,
 }
@@ -64,6 +65,8 @@ pub enum TradeError {
     DeadlineNotPassed = 4,
     DeadlineAlreadyPassed = 5,
     AlreadyDelivered = 6,
+    AlreadyAccepted = 7,
+    NotAcceptedYet = 8,
 }
 
 
@@ -105,6 +108,7 @@ impl SkillTradeContract {
             reputation_contract,
             delivered_a: false,
             delivered_b: false,
+            accepted_b: false,
             deadline,
             status: TradeStatus::Open,
         };
@@ -118,17 +122,27 @@ impl SkillTradeContract {
 
     /// party_b posts their matching bond to accept the trade.
     pub fn accept_trade(env: Env, trade_id: u64) -> Result<(), TradeError> {
-        let trade = Self::load_trade(&env, trade_id)?;
+        let mut trade = Self::load_trade(&env, trade_id)?;
         trade.party_b.require_auth();
 
         if trade.status != TradeStatus::Open {
             return Err(TradeError::InvalidStatus);
         }
+        
+        if trade.accepted_b {
+            return Err(TradeError::AlreadyAccepted);
+        }
 
         let token_client = token::Client::new(&env, &trade.bond_token);
         token_client.transfer(&trade.party_b, &env.current_contract_address(), &trade.bond_amount);
 
+        trade.accepted_b = true;
         env.storage().persistent().set(&DataKey::Trade(trade_id), &trade);
+        
+        let topics = (symbol_short!("Accepted"), trade_id);
+        let data = (trade.party_b.clone(), trade.bond_amount);
+        env.events().publish(topics, data);
+        
         Ok(())
     }
 
@@ -139,6 +153,10 @@ impl SkillTradeContract {
 
         if env.ledger().timestamp() > trade.deadline {
             return Err(TradeError::DeadlineAlreadyPassed);
+        }
+        
+        if !trade.accepted_b {
+            return Err(TradeError::NotAcceptedYet);
         }
 
         if party == trade.party_a {
@@ -216,6 +234,20 @@ impl SkillTradeContract {
             return Err(TradeError::DeadlineNotPassed);
         }
 
+        let token_client = token::Client::new(&env, &trade.bond_token);
+
+        // If party B never accepted, just return party A's bond and close the trade.
+        if !trade.accepted_b {
+            if claimant != trade.party_a {
+                return Err(TradeError::Unauthorized);
+            }
+            token_client.transfer(&env.current_contract_address(), &trade.party_a, &trade.bond_amount);
+            
+            trade.status = TradeStatus::Completed; // or a new Cancelled status, but Completed is fine
+            env.storage().persistent().set(&DataKey::Trade(trade_id), &trade);
+            return Ok(());
+        }
+
         let (defaulting_party, honest_party, honest_delivered) = if claimant == trade.party_a && !trade.delivered_b {
             (trade.party_b.clone(), trade.party_a.clone(), trade.delivered_a)
         } else if claimant == trade.party_b && !trade.delivered_a {
@@ -224,7 +256,6 @@ impl SkillTradeContract {
             return Err(TradeError::Unauthorized);
         };
 
-        let token_client = token::Client::new(&env, &trade.bond_token);
         // Honest party gets their own bond back plus the defaulter's bond.
         let payout = trade.bond_amount * 2;
         token_client.transfer(&env.current_contract_address(), &honest_party, &payout);
