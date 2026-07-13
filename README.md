@@ -3,8 +3,8 @@
 Ledger of Trades is a decentralized bartering protocol built on Stellar (Soroban). It allows two parties to safely swap services (e.g., "I'll design your logo if you build my website") without exchanging money. Instead, both parties post a stablecoin bond. The bond is returned when both sides confirm delivery, or forfeited to the honest party if the other side defaults. Every completed or defaulted trade automatically updates both users' on-chain reputations.
 
 ## 🔗 Live Demo & Video Pitch
-- **Live Platform**: [ledger-of-trades.vercel.app](https://ledger-of-trades-peer-to-peer-skill.vercel.app/) *(Update this with your final Vercel URL)*
-- **Demo Video**: [Insert YouTube/Drive Link Here]
+- **Live Platform**: [ledger-of-trades.vercel.app](https://ledger-of-trades-peer-to-peer-skill.vercel.app/)
+- **Demo Video**: [Watch the Demo on Google Drive](https://drive.google.com/file/d/1fGGgj5AZkHstn-jZTLA1eWcAU1cPq6Fa/view?usp=sharing)
 
 ## 🌟 Key Features
 
@@ -22,15 +22,19 @@ As per the submission checklist, here are the required screenshots demonstrating
 
 ### 1. Mobile Responsive UI
 The platform is fully responsive and optimized for mobile devices, stacking the two-column ledger beautifully on narrow screens.
-<img src="docs/mobile_UI.png" width="100%" alt="Mobile Responsive UI" /> *(Add screenshot to docs/mobile_UI.png)*
+<img src="screenshots/MOBILE_UI - Copy.png" width="100%" alt="Mobile Responsive UI" />
 
 ### 2. CI/CD Pipeline Running
 Automated GitHub Actions workflow running tests and deploying the frontend.
-<img src="docs/CI_CD.png" width="100%" alt="CI/CD Pipeline" /> *(Add screenshot to docs/CI_CD.png)*
+<img src="screenshots/CICD_PIPELINE - Copy.png" width="100%" alt="CI/CD Pipeline" />
 
 ### 3. Test Output (3+ Passing Tests)
 Comprehensive Rust integration tests and React frontend tests validating the smart contract and UI logic.
-<img src="docs/Test_Output.png" width="100%" alt="Test Output" /> *(Add screenshot to docs/Test_Output.png)*
+<img src="screenshots/test_output - Copy.png" width="100%" alt="Test Output" />
+
+### 4. Trade Lifecycle on Chain
+Users can verify their completed barters successfully settled on the Stellar blockchain.
+<img src="screenshots/deliverd_onchain - Copy.png" width="100%" alt="Delivered On Chain" />
 
 ---
 
