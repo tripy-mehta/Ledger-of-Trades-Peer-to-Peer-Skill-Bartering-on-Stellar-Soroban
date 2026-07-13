@@ -73,7 +73,7 @@ export default function LedgerEntry({ trade, currentAddress, onAction, actionLoa
   const myDelivered = isPartyA ? trade.delivered_a : trade.delivered_b;
   const deadlinePassed = trade.deadline && Date.now() / 1000 > Number(trade.deadline);
 
-  const canAccept = isPartyB && isOpen;
+  const canAccept = isPartyB && statusKey !== 'Completed' && statusKey !== 'Defaulted' && statusKey !== 'BothDelivered';
   const canMarkDelivered = isParticipant && isOpen && !myDelivered && !deadlinePassed;
   const canClaimDefault = isParticipant && deadlinePassed && !isClosed;
 

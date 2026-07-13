@@ -3,6 +3,22 @@ import { NETWORK, CONTRACTS } from './config';
 
 const server = new rpc.Server(NETWORK.rpcUrl);
 
+// Soroban SDK may return enum discriminants as: number 0, bigint 0n,
+// string "0", string "Open", or object { Open: null }
+const STATUS_NAMES = ['Open', 'BothDelivered', 'Completed', 'Defaulted'];
+function normalizeStatus(raw) {
+  if (raw == null) return 'Open';
+  if (typeof raw === 'bigint') return STATUS_NAMES[Number(raw)] ?? 'Open';
+  if (typeof raw === 'number') return STATUS_NAMES[raw] ?? 'Open';
+  if (typeof raw === 'string') {
+    const n = parseInt(raw, 10);
+    if (!isNaN(n) && String(n) === raw) return STATUS_NAMES[n] ?? 'Open'; // '0' → 'Open'
+    return raw; // already 'Open', 'Completed' etc.
+  }
+  // object form: { Open: null }
+  return Object.keys(raw)[0] ?? 'Open';
+}
+
 /**
  * Thin client around the SkillTrade Soroban contract.
  * Builds, simulates, and (where a signer is supplied) submits transactions.
@@ -109,15 +125,16 @@ export class TradeClient {
   async getTrade(tradeId, sourceAddress) {
     const raw = await this.view('get_trade', [nativeToScVal(BigInt(tradeId), { type: 'u64' })], sourceAddress);
     if (!raw) return null;
-    // Normalize BigInt fields and ensure addresses are plain strings
     return {
       ...raw,
+      status: normalizeStatus(raw.status),
       bond_amount: raw.bond_amount !== undefined ? raw.bond_amount : 0n,
       deadline: raw.deadline !== undefined ? raw.deadline : 0n,
       party_a: String(raw.party_a ?? ''),
       party_b: String(raw.party_b ?? ''),
     };
   }
+
 }
 
 export const tradeClient = new TradeClient();
