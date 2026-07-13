@@ -13,7 +13,7 @@ Ledger of Trades is a decentralized bartering protocol built on Stellar (Soroban
 
 ## ✅ Successful Trade Transaction
 You can verify a fully completed barter (Propose -> Accept -> Delivered) settling on-chain here: 
-[View on Stellar Expert](https://stellar.expert/explorer/testnet/tx/72b326928b09fb4ba8aac691dd062213ab3f68da06d91f4ee64341360bfd78eb)
+[72b326928b09fb4ba8aac691dd062213ab3f68da06d91f4ee64341360bfd78eb](https://stellar.expert/explorer/testnet/tx/72b326928b09fb4ba8aac691dd062213ab3f68da06d91f4ee64341360bfd78eb)
 
 ## 🌟 Key Features
 
@@ -31,19 +31,19 @@ As per the submission checklist, here are the required screenshots demonstrating
 
 ### 1. Mobile Responsive UI
 The platform is fully responsive and optimized for mobile devices, stacking the two-column ledger beautifully on narrow screens.
-<img src="screenshots/MOBILE_UI - Copy.png" width="100%" alt="Mobile Responsive UI" />
+<img src="screenshots/mobile_ui.png" width="100%" alt="Mobile Responsive UI" />
 
 ### 2. CI/CD Pipeline Running
 Automated GitHub Actions workflow running tests and deploying the frontend.
-<img src="screenshots/CICD_PIPELINE - Copy.png" width="100%" alt="CI/CD Pipeline" />
+<img src="screenshots/cicd_pipeline.png" width="100%" alt="CI/CD Pipeline" />
 
 ### 3. Test Output (3+ Passing Tests)
 Comprehensive Rust integration tests and React frontend tests validating the smart contract and UI logic.
-<img src="screenshots/test_output - Copy.png" width="100%" alt="Test Output" />
+<img src="screenshots/test_output.png" width="100%" alt="Test Output" />
 
 ### 4. Trade Lifecycle on Chain
 Users can verify their completed barters successfully settled on the Stellar blockchain.
-<img src="screenshots/deliverd_onchain - Copy.png" width="100%" alt="Delivered On Chain" />
+<img src="screenshots/delivered_onchain.png" width="100%" alt="Delivered On Chain" />
 
 ---
 
@@ -111,6 +111,4 @@ This builds both contracts, deploys them to Stellar Testnet, initializes the Rep
 | Error handling & loading states | `Banner.jsx`, `Skeleton.jsx`, try/catch in `App.jsx` |
 | Tests (contracts + frontend) | `contracts/*/src/test.rs`, `frontend/src/test/*.test.jsx` |
 | Documentation | This README + inline doc comments in every contract |
-
-## License
-MIT
+--
