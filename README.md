@@ -6,6 +6,11 @@ Ledger of Trades is a decentralized bartering protocol built on Stellar (Soroban
 - **Live Platform**: [ledger-of-trades.vercel.app](https://ledger-of-trades-peer-to-peer-skill.vercel.app/)
 - **Demo Video**: [Watch the Demo on Google Drive](https://drive.google.com/file/d/1fGGgj5AZkHstn-jZTLA1eWcAU1cPq6Fa/view?usp=sharing)
 
+## 📜 Deployed Smart Contracts (Stellar Testnet)
+- **Reputation Registry**: `CAB6SC4RNZEGLM45KV6NEB22QSJBCFP2Q4NTT34IVGGSD3VKHHOIVX26`
+- **Skill Trade Contract**: `CDCIRTNU4VBOGCQPHXCJ2LUTC3YKTCLT7DCHXLOPURJMJRBG6E6MLZNW`
+- **Bond Token (Native XLM)**: `CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC`
+
 ## 🌟 Key Features
 
 1. **Symmetric Bonds, No Payments**: Swap skills securely. Both parties post an identical bond, ensuring commitment without requiring either side to actually pay for the other's service.
