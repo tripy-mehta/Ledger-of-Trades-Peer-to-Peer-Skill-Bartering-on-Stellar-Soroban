@@ -10,13 +10,15 @@ function normalizeStatus(raw) {
   if (raw == null) return 'Open';
   if (typeof raw === 'bigint') return STATUS_NAMES[Number(raw)] ?? 'Open';
   if (typeof raw === 'number') return STATUS_NAMES[raw] ?? 'Open';
-  if (typeof raw === 'string') {
-    const n = parseInt(raw, 10);
-    if (!isNaN(n) && String(n) === raw) return STATUS_NAMES[n] ?? 'Open'; // '0' → 'Open'
-    return raw; // already 'Open', 'Completed' etc.
+  
+  let strVal = typeof raw === 'string' ? raw : Object.keys(raw)[0];
+  if (!strVal) return 'Open';
+
+  const n = parseInt(strVal, 10);
+  if (!isNaN(n) && String(n) === strVal) {
+    return STATUS_NAMES[n] ?? 'Open';
   }
-  // object form: { Open: null }
-  return Object.keys(raw)[0] ?? 'Open';
+  return strVal;
 }
 
 /**

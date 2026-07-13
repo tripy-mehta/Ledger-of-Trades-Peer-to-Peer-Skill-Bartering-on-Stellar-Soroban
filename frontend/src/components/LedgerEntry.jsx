@@ -18,21 +18,7 @@ const STATUS_STYLES = {
   Defaulted: 'border-bad/40 text-bad bg-bad/10',
 };
 
-/**
- * Normalize whatever the Soroban SDK returns for an enum into a plain string.
- *   - Integer 0,1,2,3  → 'Open','BothDelivered','Completed','Defaulted'
- *   - String 'Open'    → 'Open'
- *   - Object {Open: null} → 'Open'
- *   - null/undefined   → 'Open'
- */
-function getStatusKey(status) {
-  if (status == null) return 'Open';
-  if (typeof status === 'number') return STATUS_BY_INDEX[status] ?? 'Open';
-  if (typeof status === 'string') return status;
-  // Object form: { Open: null }
-  const key = Object.keys(status)[0];
-  return key || 'Open';
-}
+
 
 function addrMatch(a, b) {
   if (!a || !b) return false;
@@ -64,7 +50,7 @@ export default function LedgerEntry({ trade, currentAddress, onAction, actionLoa
     );
   }
 
-  const statusKey = getStatusKey(trade.status);
+  const statusKey = trade.status || 'Open';
   const isPartyA = addrMatch(currentAddress, trade.party_a);
   const isPartyB = addrMatch(currentAddress, trade.party_b);
   const isParticipant = isPartyA || isPartyB;
