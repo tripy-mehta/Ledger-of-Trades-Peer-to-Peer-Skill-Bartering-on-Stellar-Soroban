@@ -1,5 +1,9 @@
 import React from 'react';
 
+// Map integer enum discriminants → string keys
+// (Soroban SDK v16 sometimes returns numbers instead of strings)
+const STATUS_BY_INDEX = ['Open', 'BothDelivered', 'Completed', 'Defaulted'];
+
 const STATUS_LABELS = {
   Open: 'Awaiting acceptance',
   BothDelivered: 'Settling…',
@@ -14,17 +18,25 @@ const STATUS_STYLES = {
   Defaulted: 'border-bad/40 text-bad bg-bad/10',
 };
 
+/**
+ * Normalize whatever the Soroban SDK returns for an enum into a plain string.
+ *   - Integer 0,1,2,3  → 'Open','BothDelivered','Completed','Defaulted'
+ *   - String 'Open'    → 'Open'
+ *   - Object {Open: null} → 'Open'
+ *   - null/undefined   → 'Open'
+ */
+function getStatusKey(status) {
+  if (status == null) return 'Open';
+  if (typeof status === 'number') return STATUS_BY_INDEX[status] ?? 'Open';
+  if (typeof status === 'string') return status;
+  // Object form: { Open: null }
+  const key = Object.keys(status)[0];
+  return key || 'Open';
+}
+
 function addrMatch(a, b) {
   if (!a || !b) return false;
   return a.trim().toUpperCase() === b.trim().toUpperCase();
-}
-
-function getStatusKey(status) {
-  if (!status) return 'Open';
-  if (typeof status === 'string') return status;
-  // Handle Soroban SDK returning enums as objects e.g. { Open: null }
-  const key = Object.keys(status)[0];
-  return key || 'Open';
 }
 
 function PartyColumn({ label, offer, address, delivered, isMe }) {
@@ -57,29 +69,29 @@ export default function LedgerEntry({ trade, currentAddress, onAction, actionLoa
   const isPartyB = addrMatch(currentAddress, trade.party_b);
   const isParticipant = isPartyA || isPartyB;
   const isOpen = statusKey === 'Open';
-  const isCompleted = statusKey === 'Completed' || statusKey === 'BothDelivered' || statusKey === 'Defaulted';
+  const isClosed = statusKey === 'Completed' || statusKey === 'Defaulted';
   const myDelivered = isPartyA ? trade.delivered_a : trade.delivered_b;
   const deadlinePassed = trade.deadline && Date.now() / 1000 > Number(trade.deadline);
 
   const canAccept = isPartyB && isOpen;
   const canMarkDelivered = isParticipant && isOpen && !myDelivered && !deadlinePassed;
-  const canClaimDefault = isParticipant && deadlinePassed && !isCompleted;
+  const canClaimDefault = isParticipant && deadlinePassed && !isClosed;
 
   let nextStep = null;
-  if (!isParticipant && isOpen) {
-    nextStep = 'You are viewing this trade as an observer.';
-  } else if (!currentAddress) {
+  if (!currentAddress) {
     nextStep = '🔌 Connect your wallet to interact with this trade.';
   } else if (canAccept) {
-    nextStep = '👇 Post your bond to accept this trade and lock in the agreement.';
+    nextStep = '👇 You are Party B — click Accept below to post your bond and lock in the deal!';
   } else if (isPartyA && isOpen) {
     nextStep = '⏳ Waiting for your trading partner to accept and post their bond.';
   } else if (canMarkDelivered) {
-    nextStep = '👇 When you have completed your side of the deal, click "Mark my side delivered".';
+    nextStep = '👇 When you have completed your side, click "Mark my side delivered".';
   } else if (statusKey === 'Completed') {
     nextStep = '🎉 Both sides delivered — bonds returned and reputations updated!';
   } else if (statusKey === 'Defaulted') {
     nextStep = '⚠️ Trade defaulted — the honest party received both bonds.';
+  } else if (!isParticipant && isOpen) {
+    nextStep = 'You are viewing this trade as an observer.';
   }
 
   return (
@@ -112,71 +124,64 @@ export default function LedgerEntry({ trade, currentAddress, onAction, actionLoa
 
       {/* Next-step hint */}
       {nextStep && (
-        <div className="px-5 sm:px-6 py-3 border-t border-rule bg-accent-soft/20">
-          <p className="text-xs text-ink/70">{nextStep}</p>
+        <div className={`px-5 sm:px-6 py-3 border-t border-rule ${canAccept ? 'bg-accent/10' : 'bg-accent-soft/20'}`}>
+          <p className={`text-xs ${canAccept ? 'text-accent font-semibold' : 'text-ink/70'}`}>{nextStep}</p>
         </div>
       )}
 
-      {/* Action footer — always visible */}
-      <div className="px-5 sm:px-6 py-4 border-t border-rule">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-col gap-0.5">
-            <p className="text-xs text-ink/50 font-mono">
-              Bond: {Number(trade.bond_amount).toLocaleString()} stroops each
+      {/* Action footer */}
+      <div className="px-5 sm:px-6 py-4 border-t border-rule flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-col gap-0.5">
+          <p className="text-xs text-ink/50 font-mono">
+            Bond: {Number(trade.bond_amount).toLocaleString()} stroops each
+          </p>
+          {trade.deadline && (
+            <p className="text-xs text-ink/40 font-mono">
+              Deadline: {new Date(Number(trade.deadline) * 1000).toLocaleDateString()}
+              {deadlinePassed && <span className="text-bad ml-1">— passed</span>}
             </p>
-            {trade.deadline && (
-              <p className="text-xs text-ink/40 font-mono">
-                Deadline: {new Date(Number(trade.deadline) * 1000).toLocaleDateString()}
-                {deadlinePassed && <span className="text-bad ml-1">— passed</span>}
-              </p>
-            )}
-          </div>
+          )}
+        </div>
 
-          <div className="flex flex-wrap gap-2">
-            {/* ACCEPT: shown for party_b when trade is open */}
-            {canAccept && (
-              <button
-                id="accept-trade-btn"
-                className="btn-primary text-sm py-2 px-4"
-                style={{ animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}
-                disabled={actionLoading}
-                onClick={() => onAction('accept')}
-              >
-                ✅ Accept &amp; post bond
-              </button>
-            )}
+        <div className="flex flex-wrap gap-2">
+          {canAccept && (
+            <button
+              id="accept-trade-btn"
+              className="btn-primary text-sm py-2.5 px-5"
+              disabled={actionLoading}
+              onClick={() => onAction('accept')}
+            >
+              ✅ Accept &amp; post bond
+            </button>
+          )}
 
-            {/* MARK DELIVERED */}
-            {canMarkDelivered && (
-              <button
-                id="mark-delivered-btn"
-                className="btn-primary text-xs py-2"
-                disabled={actionLoading}
-                onClick={() => onAction('markDelivered')}
-              >
-                Mark my side delivered
-              </button>
-            )}
+          {canMarkDelivered && (
+            <button
+              id="mark-delivered-btn"
+              className="btn-primary text-xs py-2"
+              disabled={actionLoading}
+              onClick={() => onAction('markDelivered')}
+            >
+              Mark my side delivered
+            </button>
+          )}
 
-            {/* CLAIM DEFAULT */}
-            {canClaimDefault && (
-              <button
-                id="claim-default-btn"
-                className="btn-secondary text-xs py-2 !border-bad/30 !text-bad"
-                disabled={actionLoading}
-                onClick={() => onAction('claimDefault')}
-              >
-                Claim default (deadline passed)
-              </button>
-            )}
+          {canClaimDefault && (
+            <button
+              id="claim-default-btn"
+              className="btn-secondary text-xs py-2 !border-bad/30 !text-bad"
+              disabled={actionLoading}
+              onClick={() => onAction('claimDefault')}
+            >
+              Claim default (deadline passed)
+            </button>
+          )}
 
-            {/* FALLBACK: if wallet connected but not matching either party */}
-            {currentAddress && !isParticipant && (
-              <p className="text-xs text-ink/40 italic">
-                Connect with Party A or B&apos;s wallet to interact.
-              </p>
-            )}
-          </div>
+          {currentAddress && !isParticipant && (
+            <p className="text-xs text-ink/40 italic">
+              Connect with Party A or B&apos;s wallet to interact.
+            </p>
+          )}
         </div>
       </div>
     </div>

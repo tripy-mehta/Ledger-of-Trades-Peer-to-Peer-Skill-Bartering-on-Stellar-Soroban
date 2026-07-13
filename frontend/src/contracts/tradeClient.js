@@ -106,8 +106,17 @@ export class TradeClient {
     return this.invoke('claim_default', args, claimant, signTransaction, onStage);
   }
 
-  getTrade(tradeId, sourceAddress) {
-    return this.view('get_trade', [nativeToScVal(BigInt(tradeId), { type: 'u64' })], sourceAddress);
+  async getTrade(tradeId, sourceAddress) {
+    const raw = await this.view('get_trade', [nativeToScVal(BigInt(tradeId), { type: 'u64' })], sourceAddress);
+    if (!raw) return null;
+    // Normalize BigInt fields and ensure addresses are plain strings
+    return {
+      ...raw,
+      bond_amount: raw.bond_amount !== undefined ? raw.bond_amount : 0n,
+      deadline: raw.deadline !== undefined ? raw.deadline : 0n,
+      party_a: String(raw.party_a ?? ''),
+      party_b: String(raw.party_b ?? ''),
+    };
   }
 }
 
