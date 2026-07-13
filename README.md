@@ -11,6 +11,10 @@ Ledger of Trades is a decentralized bartering protocol built on Stellar (Soroban
 - **Skill Trade Contract**: `CDCIRTNU4VBOGCQPHXCJ2LUTC3YKTCLT7DCHXLOPURJMJRBG6E6MLZNW`
 - **Bond Token (Native XLM)**: `CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC`
 
+## ✅ Successful Trade Transaction
+You can verify a fully completed barter (Propose -> Accept -> Delivered) settling on-chain here: 
+[View on Stellar Expert](https://stellar.expert/explorer/testnet/tx/72b326928b09fb4ba8aac691dd062213ab3f68da06d91f4ee64341360bfd78eb)
+
 ## 🌟 Key Features
 
 1. **Symmetric Bonds, No Payments**: Swap skills securely. Both parties post an identical bond, ensuring commitment without requiring either side to actually pay for the other's service.
