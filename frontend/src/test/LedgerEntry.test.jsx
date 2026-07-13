@@ -12,6 +12,7 @@ const sampleTrade = {
   bond_amount: 100,
   delivered_a: false,
   delivered_b: false,
+  accepted_b: true,
   status: 'Open',
   deadline: Math.floor(Date.now() / 1000) + 100000,
 };
